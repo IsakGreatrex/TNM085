@@ -47,6 +47,11 @@ plot(time, x(3,:))
 hold on
 plot(time, x(4,:))
 
+xlabel('Time')
+ylabel('Position')
+legend('Mass 1', 'Mass 2', 'Mass 3', 'Mass 4')
+
+
 % 
 % figure;
 % subplot(2,2,1);
