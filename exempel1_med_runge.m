@@ -26,10 +26,10 @@ x(:,1) = x0;
 % Solve the ODE using the Euler method
 i = 1;
 while t <= tf
-    k1 = spring_damper(t, x(:,i), m1, m2, k, c, l);
-    k2 = spring_damper(t + h/2, x(:,i) + k1/2, m1, m2, k, c, l);
-    k3 = spring_damper(t + h, x(:,i) + k2/2, m1, m2, k, c, l);
-    k4 = spring_damper(t + h, x(:,i) + k3, m1, m2, k, c, l);
+    k1 = h*spring_damper(t, x(:,i), m1, m2, k, c, l);
+    k2 = h*spring_damper(t + h/2, x(:,i) + k1/2, m1, m2, k, c, l);
+    k3 = h*spring_damper(t + h, x(:,i) + k2/2, m1, m2, k, c, l);
+    k4 = h*spring_damper(t + h, x(:,i) + k3, m1, m2, k, c, l);
     x(:,i+1) = x(:,i) + (k1 + 2*k2 + 2*k3 + k4)/6;
     t = t + h;
     i = i + 1;
