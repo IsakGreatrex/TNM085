@@ -1,3 +1,5 @@
+clear
+
 % Set the time step
 h = 0.01;
 
