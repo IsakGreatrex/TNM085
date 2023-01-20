@@ -12,9 +12,10 @@ m1 = 1;
 m2 = 1;
 k = 10;
 c = 2;
+l = 1;
 
 % Set the initial conditions
-x0 = [0, 1, 0, 0];
+x0 = [0, 3, 0, 0];
 
 % Preallocate the solution arrays
 x = zeros(4, (tf/h) + 1);
@@ -23,7 +24,7 @@ x(:,1) = x0;
 % Solve the ODE using the Euler method
 i = 1;
 while t <= tf
-    x(:,i+1) = x(:,i) + h * spring_damper(t, x(:,i), m1, m2, k, c);
+    x(:,i+1) = x(:,i) + h * spring_damper(t, x(:,i), m1, m2, k, c,l);
     t = t + h;
     i = i+1;
 end
