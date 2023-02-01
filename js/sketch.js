@@ -1,7 +1,7 @@
-const m = 1;
+const m = 2;
 const g = 9.82;
-const k = 2;
-const d = 1;
+const k = 100;
+const d = 2;
 
 class Point{
   constructor(x,y){
@@ -27,15 +27,91 @@ class Spring{
 
 class SBody{
   constructor(){
-    this.points = [new Point(50,0), new Point(0,50), new Point(70,50)];
-    this.springs = [new Spring(), new Spring(), new Spring()];
+    this.points = []; //[new Point(50,0), new Point(0,50), new Point(70,50)];
+    this.springs = [];//[new Spring(), new Spring(), new Spring()];
     
     //Connect springs
-    this.addSpring(0,0,1);
-    this.addSpring(1,1,2);
-    this.addSpring(2,2,0);
+    //this.addSpring(0,0,1);
+    //this.addSpring(1,1,2);
+    //this.addSpring(2,2,0);
   }
   
+  createBox(topLeft,density,n){
+    //For n points there exists 4(n^2-n) springs
+    let springAmount = 4*(pow(n,2)-n);
+
+    //Generate points
+    for(let i=0; i<n; i++){
+      this.points.push(new Point(topLeft.x, topLeft.y+i*density));
+
+      for(let j=1; j<n; j++){
+        this.points.push(new Point(topLeft.x + j*density, topLeft.y+i*density));
+      }
+    }
+
+    //Fill spring array with springs
+    for(let i = 0; i < springAmount; i++){
+      this.springs.push(new Spring());
+    }
+    console.log(this.springs)
+
+    //Generate Spring connections
+    let springCount = 0;
+    for(let i=0; i < this.points.length-1;i++){
+        //console.log(this.springs)
+        //if in the bottom
+        // *---
+        if(i > this.points.length-n-1){
+          this.addSpring(springCount++, i, i+1)
+          continue;
+        }
+
+        //If we are at the left side connect like this:
+        //*---
+        //| \
+        if(i%n==0){
+          this.addSpring(springCount++, i, i+n)
+          this.addSpring(springCount++, i, i+n+1)
+          this.addSpring(springCount++, i, i+1)
+          continue;
+        }
+
+        //If we are at the right side:
+        // ---*
+        //  / |
+        if((i-n+1)%n==0){
+          this.addSpring(springCount++, i, i+n-1)
+          this.addSpring(springCount++, i, i+n)
+          continue;
+        }
+
+        //if in the middle
+        //    *---
+        //  / | \
+        this.addSpring(springCount++, i, i+n-1)
+        this.addSpring(springCount++, i, i+n)
+        this.addSpring(springCount++, i, i+n+1)
+        this.addSpring(springCount++, i, i+1)
+        continue;
+    }
+    console.log(this.springs);
+  }
+
+  show(){
+    for(let i in this.points){
+      strokeWeight(10);
+      point(this.points[i].x,this.points[i].y);
+    }
+
+    for(let pi in this.springs){
+      let i = this.springs[pi].i;
+      let j = this.springs[pi].j;
+      strokeWeight(1);
+      line(this.points[i].x,this.points[i].y,this.points[j].x,this.points[j].y);
+    }
+  }
+
+  //pi = spring index, i = start point index, j = end point index
   addSpring(pi, i, j){
     this.springs[pi].i = i;
     this.springs[pi].j = j;
@@ -46,7 +122,7 @@ class SBody{
   }
   
   accumForces(){
-    /* gravity */
+    /* gravity + mouse */
     for(let i=0 ; i < this.points.length; ++i)
     {
       this.points[i].fx = 0;
@@ -93,16 +169,16 @@ class SBody{
       }
       
       // Calculate normal vectors to springs
-      this.springs[i].nx = (y1 - y2) / r12d;
-      this.springs[i].ny = -(x1 - x2) / r12d;
+      //this.springs[i].nx = (y1 - y2) / r12d;
+      //this.springs[i].ny = -(x1 - x2) / r12d;
 
     }
   }
   
-  euler(){
+  euler(step){
     let i;
     let dry;
-    let ts = 0.1;
+    let ts = step;
     
     for(i=0 ; i < this.points.length; ++i)
     {
@@ -119,26 +195,29 @@ class SBody{
       if(this.points[i].y + dry > height)
       {
         dry = height - this.points[i].y;
-        this.points[i].vy = -0.9*this.points[i].vy;
+        this.points[i].vy = -1.5*this.points[i].vy;
       }
 
       this.points[i].y += dry;
 
     }
+
+/*     this.points[0].x = mouseX;
+    this.points[0].y = mouseY; */
   }
 }
 
 let body;
 
 function setup() {
-  createCanvas(400, 400);
+  createCanvas(windowWidth, windowHeight-50);
   
   //Create object: connect nodes with springs
   body = new SBody();
-  console.log(body);
   
-  
+  topLeft = createVector(100, 200);
   //Initialize
+  body.createBox(topLeft, 20, 15);
 }
 
 function Euler(func,tStep){
@@ -150,16 +229,17 @@ function draw() {
   
   //Euler integrate for each frame
   body.accumForces();
-  body.euler();
+  body.euler(0.05);
   
-  console.log(body);
+  body.show();
+  //console.log(body);
   
   //Display
-  triangle(body.points[0].x,
+  /* triangle(body.points[0].x,
           body.points[0].y,
           body.points[1].x,
           body.points[1].y,
           body.points[2].x,
-          body.points[2].y);
+          body.points[2].y); */
   
 }
