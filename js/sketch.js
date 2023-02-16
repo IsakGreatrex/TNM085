@@ -37,7 +37,7 @@ class SBody{
   }
   
   createBox(topLeft,density,n){
-    //For n points there exists 4(n^2-n) springs
+    //For n points there exists 4(n^2-n) springs (BUG, NOT WORKING CORRECTLY)
     let springAmount = 4*(pow(n,2)-n);
 
     //Generate points
@@ -53,7 +53,6 @@ class SBody{
     for(let i = 0; i < springAmount; i++){
       this.springs.push(new Spring());
     }
-    console.log(this.springs)
 
     //Generate Spring connections
     let springCount = 0;
@@ -97,17 +96,23 @@ class SBody{
     console.log(this.springs);
   }
 
-  show(){
-    for(let i in this.points){
-      strokeWeight(10);
+  show(nodes, springs,s){
+    if(springs){
+      for(let pi in this.springs){
+        let i = this.springs[pi].i;
+        let j = this.springs[pi].j;
+        strokeWeight(1);
+        stroke('black')
+        line(this.points[i].x,this.points[i].y,this.points[j].x,this.points[j].y);
+      }
+    }
+    
+    if(nodes){
+      for(let i in this.points){
+      strokeWeight(s);
+      stroke('blue')
       point(this.points[i].x,this.points[i].y);
     }
-
-    for(let pi in this.springs){
-      let i = this.springs[pi].i;
-      let j = this.springs[pi].j;
-      strokeWeight(1);
-      line(this.points[i].x,this.points[i].y,this.points[j].x,this.points[j].y);
     }
   }
 
@@ -123,10 +128,17 @@ class SBody{
   
   accumForces(){
     /* gravity + mouse */
+    
     for(let i=0 ; i < this.points.length; ++i)
     {
-      this.points[i].fx = 0;
-      this.points[i].fy = m * g;
+      if(mouseIsPressed){
+        this.points[i].fx = (50/(abs(-this.points[i].x+mouseX)))*(-this.points[i].x+mouseX);
+        this.points[i].fy = m * g + (50/(abs(-this.points[i].y+mouseY)))*(-this.points[i].y+mouseY);
+      }
+      else{
+        this.points[i].fx = 0;
+        this.points[i].fy = m * g;
+      }
     }
     
     /* loop over all springs */
@@ -138,7 +150,7 @@ class SBody{
       let x2 = this.points[this.springs[i].j].x;
       let y2 = this.points[this.springs[i].j].y;
       
-      // calculate norm sqr(distance)
+      // calculate norm (distance)
       let r12d = sqrt (
       (x1 - x2)*(x1 - x2) +
       (y1 - y2)*(y1 - y2) 
@@ -146,16 +158,16 @@ class SBody{
       
       if(r12d !== 0) // start = end?
       {
-        // get velocities of start & end points
+        // get velocities of start (& end points)
         let vx12 = this.points[this.springs[i].i].vx - this.points[this.springs[i].j].vx;
         let vy12 = this.points[this.springs[i].i].vy - this.points[this.springs[i].j].vy;
         
-        // calculate force value
+        // calculate force value 
         let f = (r12d - this.springs[i].l) * k +
-        (vx12 * (x1 - x2) +
-        vy12 * (y1 - y2)) * d / r12d;
+        (vx12 * (x1 - x2) + vy12 * (y1 - y2)) * d / r12d; //Direct scalar product
         
-        // force vector
+        // force vector, calculate normalized vector that is parallell with the spring
+        // and set magnitude to force value
         let Fx = ((x1 - x2) / r12d ) * f;
         let Fy = ((y1 - y2) / r12d ) * f;
         
@@ -175,23 +187,74 @@ class SBody{
     }
   }
   
+  //this is where position and velocity is updated
   euler(step){
     let i;
-    let dry;
+    let dry, drx; //used to check collision with ground and self
     let ts = step;
     
     for(i=0 ; i < this.points.length; ++i)
     {
       /* x */
       this.points[i].vx = this.points[i].vx + (this.points[i].fx / m)*ts;
-      this.points[i].x = this.points[i].x + this.points[i].vx * ts;
+      this.points[i].x += this.points[i].vx * ts;
       
       /* y */
       //m försvinner från mg när man delar med m
       this.points[i].vy = this.points[i].vy + this.points[i].fy * ts; 
       dry = this.points[i].vy * ts;
+      /*
+      //Check if self colliding
+      if(sqrt(drx*drx + dry*dry) < r)
+      {
+        //Calculate new position to move to, should be r distance from
+        dry = height - this.points[i].y;
+        this.points[i].vy = -1.5*this.points[i].vy;
+      }
 
-      /* Boundaries Y */
+      /*
+      //self COLLISION test (not working):
+      let r = 5;
+      // check if the current node is colliding with any other node
+      for(let i = 0; i < this.points.length; i++){
+
+        //Get all the indecies for the other nodes that are connected
+        for(let j = 0; j < this.springs.length; i++)
+
+        //Check if too close to other nodes
+
+        //Calculate new pos to push node to, should be r distance away from other node
+
+        //USe push vector to flip velocity
+
+
+        for (let j = 0; j < this.points.length; j++) {
+          if (i === j) continue;
+
+          let xDiff = this.points[j].x - this.points[i].x;
+          let yDiff = this.points[j].y - this.points[i].y;
+          let distance = Math.sqrt(xDiff * xDiff + yDiff * yDiff);
+
+          // collision detected
+          if (distance <= 2 * r) {
+            let collisionAngle = Math.atan2(yDiff, xDiff);
+            let normalX = Math.cos(collisionAngle);
+            let normalY = Math.sin(collisionAngle);
+
+            // collision response
+            let relativeVelocity = this.points[j].vx - this.points[i].vx;
+            let impulse = 2 * relativeVelocity / (2 * r);
+
+            this.points[j].x -= normalX * impulse;
+            this.points[j].y -= normalY * impulse;
+            this.points[i].x += normalX * impulse;
+            this.points[i].y += normalY * impulse;
+          }
+        }
+      }
+      */
+
+      // Boundaries Y, check if dry is outside
       if(this.points[i].y + dry > height)
       {
         dry = height - this.points[i].y;
@@ -214,32 +277,23 @@ function setup() {
   
   //Create object: connect nodes with springs
   body = new SBody();
-  
-  topLeft = createVector(100, 200);
-  //Initialize
-  body.createBox(topLeft, 20, 15);
-}
 
-function Euler(func,tStep){
-  
+  //Create shape
+  topLeft = createVector(100, 150);
+  body.createBox(topLeft, 30, 10);
+  console.log(body);
 }
 
 function draw() {
   background(220);
-  
-  //Euler integrate for each frame
+
+  //Calculate all forces
   body.accumForces();
+
+  //Så jävla trash, instabil af
   body.euler(0.05);
   
-  body.show();
-  //console.log(body);
-  
-  //Display
-  /* triangle(body.points[0].x,
-          body.points[0].y,
-          body.points[1].x,
-          body.points[1].y,
-          body.points[2].x,
-          body.points[2].y); */
+  //Argument: nodes? springs? storlek på nodes.
+  body.show(1, 1, 30);
   
 }
