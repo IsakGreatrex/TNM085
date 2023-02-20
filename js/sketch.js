@@ -279,8 +279,8 @@ function setup() {
   body = new SBody();
 
   //Create shape
-  topLeft = createVector(100, 150);
-  body.createBox(topLeft, 30, 10);
+  topLeft = createVector(100, 100);
+  body.createBox(topLeft, 40, 10);
   console.log(body);
 }
 
@@ -290,10 +290,10 @@ function draw() {
   //Calculate all forces
   body.accumForces();
 
-  //Så jävla trash, instabil af
+  //Så jävla trash för ts>0.5, instabil af
   body.euler(0.05);
   
-  //Argument: nodes? springs? storlek på nodes.
-  body.show(1, 1, 30);
+  //Argument: nodes, springs, storlek på nodes.
+  body.show(1, 0, 20);
   
 }
