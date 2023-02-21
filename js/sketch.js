@@ -317,11 +317,38 @@ class SBody{
 
 let body;
 
+let nodesInput, springsInput, sizeInput, updateButton;
+
+
 function setup() {
   createCanvas(windowWidth, windowHeight-50);
-  
+
   //Create object: connect nodes with springs
   body = new SBody();
+
+
+  let nodesContainer = createDiv();
+  nodesContainer.position(10, 10);
+  let nodesLabel = createElement('label', 'Nodes: ');
+  nodesLabel.parent(nodesContainer);
+  nodesInput = createSlider(0,1,1);
+  nodesInput.parent(nodesContainer);
+
+  // Create a div container for the springs input field with a label
+  let springsContainer = createDiv();
+  springsContainer.position(10, 40);
+  let springsLabel = createElement('label', 'Springs: ');
+  springsLabel.parent(springsContainer);
+  springsInput = createSlider(0,1,1)
+  springsInput.parent(springsContainer);
+
+  // Create a div container for the size input field with a label
+  let sizeContainer = createDiv();
+  sizeContainer.position(10, 70);
+  let sizeLabel = createElement('label', 'Node Size: ');
+  sizeLabel.parent(sizeContainer);
+  sizeInput = createInput(20, "numbers")
+  sizeInput.parent(sizeContainer);
 
   //Create shape
   topLeft = createVector(100, 100);
