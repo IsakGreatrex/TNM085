@@ -1,7 +1,23 @@
-const m = 2;
+const m = 5;
 const g = 9.82;
 const k = 100;
 const d = 2;
+const r = 36; //radius for self collision
+
+// draw an arrow for a vector at a given base position
+function drawArrow(base, vec, myColor) {
+  push();
+  stroke(myColor);
+  strokeWeight(1);
+  fill(myColor);
+  translate(base.x, base.y);
+  line(0, 0, vec.x, vec.y);
+  rotate(vec.heading());
+  let arrowSize = 7;
+  translate(vec.mag() - arrowSize, 0);
+  triangle(0, arrowSize / 2, 0, -arrowSize / 2, arrowSize, 0);
+  pop();
+}
 
 class Point{
   constructor(x,y){
@@ -11,6 +27,7 @@ class Point{
     this.vy = 0;
     this.fx = 0;
     this.fy = 0;
+    this.connectedPoints = [];
   }
 }
 
@@ -29,7 +46,6 @@ class SBody{
   constructor(){
     this.points = []; //[new Point(50,0), new Point(0,50), new Point(70,50)];
     this.springs = [];//[new Spring(), new Spring(), new Spring()];
-    
     //Connect springs
     //this.addSpring(0,0,1);
     //this.addSpring(1,1,2);
@@ -96,13 +112,19 @@ class SBody{
     console.log(this.springs);
   }
 
-  show(nodes, springs,s){
+  show(nodes, springs,arrow,collision,s){
     if(springs){
       for(let pi in this.springs){
         let i = this.springs[pi].i;
         let j = this.springs[pi].j;
-        strokeWeight(1);
-        stroke('black')
+        strokeWeight(5);
+        let minColor = color(0, 255, 0);
+        let maxColor = color(255, 0, 0);
+
+        stroke(lerpColor(minColor, maxColor, 
+          sqrt(abs(createVector(this.points[i].x-this.points[j].x, this.points[i].y-this.points[j].y).mag() - this.springs[pi].l)
+        /this.springs[pi].l)))
+        
         line(this.points[i].x,this.points[i].y,this.points[j].x,this.points[j].y);
       }
     }
@@ -112,6 +134,22 @@ class SBody{
       strokeWeight(s);
       stroke('blue')
       point(this.points[i].x,this.points[i].y);
+      
+
+      if(collision){
+        stroke('green')
+        strokeWeight(1);
+        noFill();
+        circle(this.points[i].x, this.points[i].y, r);
+      }
+        
+      
+      if(arrow){
+      drawArrow(createVector(this.points[i].x, this.points[i].y),
+                createVector(this.points[i].vx, this.points[i].vy).normalize().mult(20), 'black');
+      drawArrow(createVector(this.points[i].x, this.points[i].y),
+                createVector(this.points[i].fx, this.points[i].fy).normalize().mult(30), 'red')
+      }
     }
     }
   }
@@ -124,6 +162,10 @@ class SBody{
     sqrt(
     pow((this.points[i].x - this.points[j].x),2) + pow((this.points[i].y -this.points[j].y),2)
     );
+
+    //Add the other point to this point's "Connected points"
+    this.points[j].connectedPoints.push(i);
+    this.points[i].connectedPoints.push(j);
   }
   
   accumForces(){
@@ -132,8 +174,8 @@ class SBody{
     for(let i=0 ; i < this.points.length; ++i)
     {
       if(mouseIsPressed){
-        this.points[i].fx = (50/(abs(-this.points[i].x+mouseX)))*(-this.points[i].x+mouseX);
-        this.points[i].fy = m * g + (50/(abs(-this.points[i].y+mouseY)))*(-this.points[i].y+mouseY);
+        this.points[i].fx = (50*m/(abs(-this.points[i].x+mouseX)))*(-this.points[i].x+mouseX);
+        this.points[i].fy = m * g + (50*m/(abs(-this.points[i].y+mouseY)))*(-this.points[i].y+mouseY);
       }
       else{
         this.points[i].fx = 0;
@@ -190,19 +232,19 @@ class SBody{
   //this is where position and velocity is updated
   euler(step){
     let i;
-    let dry, drx; //used to check collision with ground and self
+    let deltaY, deltaX; // amount to move, used to check collision with ground and self
     let ts = step;
     
     for(i=0 ; i < this.points.length; ++i)
     {
       /* x */
       this.points[i].vx = this.points[i].vx + (this.points[i].fx / m)*ts;
-      this.points[i].x += this.points[i].vx * ts;
+      deltaX = this.points[i].vx * ts;
       
       /* y */
       //m försvinner från mg när man delar med m
       this.points[i].vy = this.points[i].vy + this.points[i].fy * ts; 
-      dry = this.points[i].vy * ts;
+      deltaY = this.points[i].vy * ts;
       /*
       //Check if self colliding
       if(sqrt(drx*drx + dry*dry) < r)
@@ -211,58 +253,61 @@ class SBody{
         dry = height - this.points[i].y;
         this.points[i].vy = -1.5*this.points[i].vy;
       }
-
-      /*
+*/
+      
       //self COLLISION test (not working):
-      let r = 5;
       // check if the current node is colliding with any other node
-      for(let i = 0; i < this.points.length; i++){
 
-        //Get all the indecies for the other nodes that are connected
-        for(let j = 0; j < this.springs.length; i++)
+      //Loop through all connected points?
+      for(let j = 1; j < this.points.length; j++){
+        if(i===j)
+          continue;
 
+        //let otherIndex = this.points[i].connectedPoints[j];
+        let other = this.points[j];
+
+        let distance = createVector(
+          this.points[i].x + deltaX - other.x,
+          this.points[i].y + deltaY - other.y);
+        
+        //console.log(distance.mag())
         //Check if too close to other nodes
+        if(distance.mag() < r)
+        {
+          //console.log(true)
+          //Calculate direction to move back to
+          let pushingVector = createVector(
+            (this.points[i].x + deltaX) - other.x,
+            (this.points[i].y + deltaY) - other.y);
+          
+          //normalize pushvector and move r distance from other node.
+          //movingVec points from other to new pos 
+          let movingVec = pushingVector.normalize().mult(r);
+          
+          //line(other.x, other.y, other.x + movingVec.x, other.y + movingVec.y)
+          //move
+          deltaX = other.x + movingVec.x - this.points[i].x;
+          deltaY = other.y + movingVec.y - this.points[i].y;
 
-        //Calculate new pos to push node to, should be r distance away from other node
+          //Use push vector to reflect velocity
+          let velocity = createVector(this.points[i].vx, this.points[i].vy)
+          this.points[i].vx = 0.5*velocity.reflect(pushingVector.normalize()).x;
+          this.points[i].vy = 0.5*velocity.reflect(pushingVector.normalize()).y;
 
-        //USe push vector to flip velocity
-
-
-        for (let j = 0; j < this.points.length; j++) {
-          if (i === j) continue;
-
-          let xDiff = this.points[j].x - this.points[i].x;
-          let yDiff = this.points[j].y - this.points[i].y;
-          let distance = Math.sqrt(xDiff * xDiff + yDiff * yDiff);
-
-          // collision detected
-          if (distance <= 2 * r) {
-            let collisionAngle = Math.atan2(yDiff, xDiff);
-            let normalX = Math.cos(collisionAngle);
-            let normalY = Math.sin(collisionAngle);
-
-            // collision response
-            let relativeVelocity = this.points[j].vx - this.points[i].vx;
-            let impulse = 2 * relativeVelocity / (2 * r);
-
-            this.points[j].x -= normalX * impulse;
-            this.points[j].y -= normalY * impulse;
-            this.points[i].x += normalX * impulse;
-            this.points[i].y += normalY * impulse;
-          }
+          break;
         }
       }
-      */
-
-      // Boundaries Y, check if dry is outside
-      if(this.points[i].y + dry > height)
+    
+      
+      // Boundaries Y, check if deltaY is outside
+      if(this.points[i].y + deltaY > height)
       {
-        dry = height - this.points[i].y;
-        this.points[i].vy = -1.5*this.points[i].vy;
+        deltaY = height - this.points[i].y;
+        this.points[i].vy = -0.8*this.points[i].vy;
       }
-
-      this.points[i].y += dry;
-
+      
+      this.points[i].y += deltaY;
+      this.points[i].x += deltaX;
     }
 
 /*     this.points[0].x = mouseX;
@@ -280,7 +325,7 @@ function setup() {
 
   //Create shape
   topLeft = createVector(100, 100);
-  body.createBox(topLeft, 40, 10);
+  body.createBox(topLeft, 50, 12);
   console.log(body);
 }
 
@@ -291,9 +336,9 @@ function draw() {
   body.accumForces();
 
   //Så jävla trash för ts>0.5, instabil af
-  body.euler(0.05);
+  body.euler(0.04);
   
-  //Argument: nodes, springs, storlek på nodes.
-  body.show(1, 0, 20);
+  //Argument: nodes, springs, arrows, collision, storlek på nodes.
+  body.show(0, 1, 0, 0, 10);
   
 }
