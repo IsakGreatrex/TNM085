@@ -1,8 +1,8 @@
 const m = 5;
 const g = 9.82;
-const k = 100;
+const k = 200;
 const d = 2;
-const r = 36; //radius for self collision
+const r = 40; //radius for self collision
 
 // draw an arrow for a vector at a given base position
 function drawArrow(base, vec, myColor) {
@@ -117,7 +117,7 @@ class SBody{
       for(let pi in this.springs){
         let i = this.springs[pi].i;
         let j = this.springs[pi].j;
-        strokeWeight(5);
+        strokeWeight(10);
         let minColor = color(0, 255, 0);
         let maxColor = color(255, 0, 0);
 
@@ -325,7 +325,7 @@ function setup() {
 
   //Create shape
   topLeft = createVector(100, 100);
-  body.createBox(topLeft, 50, 12);
+  body.createBox(topLeft, 50, 5);
   console.log(body);
 }
 
@@ -336,9 +336,9 @@ function draw() {
   body.accumForces();
 
   //Så jävla trash för ts>0.5, instabil af
-  body.euler(0.04);
+  body.euler(0.041);
   
   //Argument: nodes, springs, arrows, collision, storlek på nodes.
-  body.show(0, 1, 0, 0, 10);
+  body.show(1, 0, 0, 1, 10);
   
 }
