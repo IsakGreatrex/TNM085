@@ -326,7 +326,29 @@ function setup() {
   //Create object: connect nodes with springs
   body = new SBody();
 
+  //Create shape
+  topLeft = createVector(100, 100);
+  body.createBox(topLeft, 50, 5);
+  console.log(body);
+  gui();
 
+}
+
+function draw() {
+  background(220);
+
+  //Calculate all forces
+  body.accumForces();
+
+  //Så jävla trash för ts>0.5, instabil af
+  body.euler(0.041);
+  
+  //Argument: nodes, springs, arrows, collision, storlek på nodes.
+  body.show(parseInt(nodesInput.value()), parseInt(springsInput.value()), parseInt(arrowInput.value()), parseInt(colInput.value()), parseInt(sizeInput.value()));
+  
+}
+
+function gui(){
   let nodesContainer = createDiv();
   nodesContainer.position(10, 10);
   let nodesLabel = createElement('label', 'Nodes: ');
@@ -342,30 +364,26 @@ function setup() {
   springsInput = createSlider(0,1,1)
   springsInput.parent(springsContainer);
 
+  let arrowContanier = createDiv();
+  arrowContanier.position(10, 70);
+  let arrowLabel = createElement('label', 'Arrows: ');
+  arrowLabel.parent(arrowContanier);
+  arrowInput = createSlider(0,1,0)
+  arrowInput.parent(arrowContanier);
+
+
+  let colContanier = createDiv();
+  colContanier.position(10, 100);
+  let colLabel = createElement('label', 'Collision size: ');
+  colLabel.parent(colContanier);
+  colInput = createSlider(0,1,0)
+  colInput.parent(colContanier);
+
   // Create a div container for the size input field with a label
   let sizeContainer = createDiv();
-  sizeContainer.position(10, 70);
+  sizeContainer.position(10, 130);
   let sizeLabel = createElement('label', 'Node Size: ');
   sizeLabel.parent(sizeContainer);
   sizeInput = createInput(20, "numbers")
   sizeInput.parent(sizeContainer);
-
-  //Create shape
-  topLeft = createVector(100, 100);
-  body.createBox(topLeft, 50, 5);
-  console.log(body);
-}
-
-function draw() {
-  background(220);
-
-  //Calculate all forces
-  body.accumForces();
-
-  //Så jävla trash för ts>0.5, instabil af
-  body.euler(0.041);
-  
-  //Argument: nodes, springs, arrows, collision, storlek på nodes.
-  body.show(1, 0, 0, 1, 10);
-  
 }
