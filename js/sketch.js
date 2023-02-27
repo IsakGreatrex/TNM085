@@ -276,7 +276,7 @@ class SBody{
         
         //console.log(distance.mag())
         //Check if too close to other nodes
-        if(distance.mag() < r && !mouseIsPressed && distance.mag()>0)
+        if(distance.mag() < r && distance.mag()>0)
         {
           //console.log(true)
           //Calculate direction to move back to
