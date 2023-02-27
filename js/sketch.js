@@ -1,6 +1,6 @@
 const m = 5;
 const g = 9.82;
-const k = 200;
+const k = 100;
 const d = 2;
 const r = 40; //radius for self collision
 
@@ -272,7 +272,7 @@ class SBody{
         
         //console.log(distance.mag())
         //Check if too close to other nodes
-        if(distance.mag() < r)
+        if(distance.mag() < r && distance.mag() > 0.0)
         {
           //console.log(true)
           //Calculate direction to move back to
@@ -291,10 +291,9 @@ class SBody{
 
           //Use push vector to reflect velocity
           let velocity = createVector(this.points[i].vx, this.points[i].vy)
-          this.points[i].vx = 0.5*velocity.reflect(pushingVector.normalize()).x;
-          this.points[i].vy = 0.5*velocity.reflect(pushingVector.normalize()).y;
+          this.points[i].vx = 0.8*velocity.reflect(pushingVector.normalize()).x;
+          this.points[i].vy = 0.8*velocity.reflect(pushingVector.normalize()).y;
 
-          break;
         }
       }
     
@@ -341,7 +340,7 @@ function draw() {
   body.accumForces();
 
   //Så jävla trash för ts>0.5, instabil af
-  body.euler(0.041);
+  body.euler(0.03);
   
   //Argument: nodes, springs, arrows, collision, storlek på nodes.
   body.show(parseInt(nodesInput.value()), parseInt(springsInput.value()), parseInt(arrowInput.value()), parseInt(colInput.value()), parseInt(sizeInput.value()));
