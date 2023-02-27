@@ -1,8 +1,8 @@
 const m = 5;
 const g = 9.82;
-const k = 200;
+const k = 100;
 const d = 2;
-const r = 40; //radius for self collision
+const r = 38; //radius for self collision
 
 // draw an arrow for a vector at a given base position
 function drawArrow(base, vec, myColor) {
@@ -174,8 +174,8 @@ class SBody{
     for(let i=0 ; i < this.points.length; ++i)
     {
       if(mouseIsPressed){
-        this.points[i].fx = (50*m/(abs(-this.points[i].x+mouseX)))*(-this.points[i].x+mouseX);
-        this.points[i].fy = m * g + (50*m/(abs(-this.points[i].y+mouseY)))*(-this.points[i].y+mouseY);
+        this.points[i].fx = 0;//(50*m/(abs(-this.points[i].x+mouseX)))*(-this.points[i].x+mouseX);
+        this.points[i].fy = m * g;//+ (50*m/(abs(-this.points[i].y+mouseY)))*(-this.points[i].y+mouseY);
       }
       else{
         this.points[i].fx = 0;
@@ -228,13 +228,15 @@ class SBody{
 
     }
   }
-  
+
+
   //this is where position and velocity is updated
   euler(step){
     let i;
     let deltaY, deltaX; // amount to move, used to check collision with ground and self
     let ts = step;
-    
+  
+
     for(i=0 ; i < this.points.length; ++i)
     {
       /* x */
@@ -245,19 +247,21 @@ class SBody{
       //m försvinner från mg när man delar med m
       this.points[i].vy = this.points[i].vy + this.points[i].fy * ts; 
       deltaY = this.points[i].vy * ts;
-      /*
-      //Check if self colliding
-      if(sqrt(drx*drx + dry*dry) < r)
-      {
-        //Calculate new position to move to, should be r distance from
-        dry = height - this.points[i].y;
-        this.points[i].vy = -1.5*this.points[i].vy;
-      }
-*/
       
-      //self COLLISION test (not working):
-      // check if the current node is colliding with any other node
+      
+      let x = this.points[i].x;
+      let y = this.points[i].y;
+      if(isPicked === null && mouseIsPressed && mouseX < x+r && mouseX>x-r&&mouseY < y+r && mouseY>y-r)
+      {
+        isPicked = i; 
+        console.log(isPicked);
+      }else if(isPicked === i && mouseIsPressed && mouseX < x+r && mouseX>x-r&&mouseY < y+r && mouseY>y-r){
+        deltaX = mouseX - x;
+        deltaY = mouseY - y;
+      }
 
+      //self COLLISION test (kinda working):
+      // check if the current node is colliding with any other node
       //Loop through all connected points?
       for(let j = 1; j < this.points.length; j++){
         if(i===j)
@@ -265,14 +269,14 @@ class SBody{
 
         //let otherIndex = this.points[i].connectedPoints[j];
         let other = this.points[j];
-
+        console.log(i);
         let distance = createVector(
           this.points[i].x + deltaX - other.x,
           this.points[i].y + deltaY - other.y);
         
         //console.log(distance.mag())
         //Check if too close to other nodes
-        if(distance.mag() < r)
+        if(distance.mag() < r && !mouseIsPressed && distance.mag()>0)
         {
           //console.log(true)
           //Calculate direction to move back to
@@ -283,18 +287,21 @@ class SBody{
           //normalize pushvector and move r distance from other node.
           //movingVec points from other to new pos 
           let movingVec = pushingVector.normalize().mult(r);
-          
+
           //line(other.x, other.y, other.x + movingVec.x, other.y + movingVec.y)
           //move
           deltaX = other.x + movingVec.x - this.points[i].x;
           deltaY = other.y + movingVec.y - this.points[i].y;
-
+          
           //Use push vector to reflect velocity
           let velocity = createVector(this.points[i].vx, this.points[i].vy)
+          
+          //drawArrow(createVector(other.x + movingVec.x, other.y + movingVec.y), velocity.reflect(pushingVector.normalize()).normalize().mult(20),'blue')
           this.points[i].vx = 0.5*velocity.reflect(pushingVector.normalize()).x;
           this.points[i].vy = 0.5*velocity.reflect(pushingVector.normalize()).y;
-
-          break;
+          
+          
+          //break;
         }
       }
     
@@ -308,6 +315,8 @@ class SBody{
       
       this.points[i].y += deltaY;
       this.points[i].x += deltaX;
+      
+      
     }
 
 /*     this.points[0].x = mouseX;
@@ -316,8 +325,15 @@ class SBody{
 }
 
 let body;
+let mySound;
 
 let nodesInput, springsInput, sizeInput, updateButton;
+
+let isPicked = null;
+function mouseReleased(){
+  isPicked = null;
+}
+
 
 
 function setup() {
@@ -351,21 +367,20 @@ function setup() {
   sizeInput.parent(sizeContainer);
 
   //Create shape
-  topLeft = createVector(100, 100);
-  body.createBox(topLeft, 50, 5);
+  topLeft = createVector(windowWidth/3, -100);
+  body.createBox(topLeft, 42, 5);
   console.log(body);
 }
 
 function draw() {
   background(220);
-
   //Calculate all forces
   body.accumForces();
 
   //Så jävla trash för ts>0.5, instabil af
-  body.euler(0.041);
+  body.euler(0.03);
   
   //Argument: nodes, springs, arrows, collision, storlek på nodes.
-  body.show(1, 0, 0, 1, 10);
+  body.show(1, 1, 1, 1, 10);
   
 }
