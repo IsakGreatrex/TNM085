@@ -1,8 +1,8 @@
-const m = 5;
+const m = 2;
 const g = 9.82;
 const k = 100;
 const d = 2;
-const r = 38; //radius for self collision
+const r = 20; //radius for self collision
 
 // draw an arrow for a vector at a given base position
 function drawArrow(base, vec, myColor) {
@@ -135,7 +135,6 @@ class SBody{
       stroke('blue')
       point(this.points[i].x,this.points[i].y);
       
-
       if(collision){
         stroke('green')
         strokeWeight(1);
@@ -150,7 +149,7 @@ class SBody{
       drawArrow(createVector(this.points[i].x, this.points[i].y),
                 createVector(this.points[i].fx, this.points[i].fy).normalize().mult(30), 'red')
       }
-    }
+      }
     }
   }
 
@@ -254,7 +253,6 @@ class SBody{
       if(isPicked === null && mouseIsPressed && mouseX < x+r && mouseX>x-r&&mouseY < y+r && mouseY>y-r)
       {
         isPicked = i; 
-        console.log(isPicked);
       }else if(isPicked === i && mouseIsPressed && mouseX < x+r && mouseX>x-r&&mouseY < y+r && mouseY>y-r){
         deltaX = mouseX - x;
         deltaY = mouseY - y;
@@ -269,7 +267,6 @@ class SBody{
 
         //let otherIndex = this.points[i].connectedPoints[j];
         let other = this.points[j];
-        console.log(i);
         let distance = createVector(
           this.points[i].x + deltaX - other.x,
           this.points[i].y + deltaY - other.y);
@@ -368,7 +365,7 @@ function setup() {
 
   //Create shape
   topLeft = createVector(windowWidth/3, -100);
-  body.createBox(topLeft, 42, 5);
+  body.createBox(topLeft, 60, 5);
   console.log(body);
 }
 
@@ -381,6 +378,6 @@ function draw() {
   body.euler(0.03);
   
   //Argument: nodes, springs, arrows, collision, storlek på nodes.
-  body.show(1, 1, 1, 1, 10);
+  body.show(0, 1, 0, 0, 10);
   
 }
