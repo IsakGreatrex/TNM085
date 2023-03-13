@@ -1,8 +1,4 @@
-const m = 5;
-const g = 9.82;
-const k = 100;
-const d = 5;
-const r = 80; //radius for self collision
+
 
 // draw an arrow for a vector at a given base position
 function drawArrow(base, vec, myColor) {
@@ -331,6 +327,13 @@ function mouseReleased(){
   isPicked = null;
 }
 
+const m = 1;
+const g = 100;
+const k = 150;
+const d = 6;
+const dens = 150;
+const r = Math.floor(0.9*dens); //radius for self collision
+
 function setup() {
   createCanvas(windowWidth, windowHeight-50);
 
@@ -338,8 +341,8 @@ function setup() {
   body = new SBody();
 
   //Create shape
-  topLeft = createVector(windowWidth/3, -100);
-  body.createBox(topLeft, 100, 5);
+  topLeft = createVector(windowWidth/3, 1);
+  body.createBox(topLeft, dens, 4);
   console.log(body);
   gui();
 }

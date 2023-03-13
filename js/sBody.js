@@ -159,15 +159,18 @@ class SBody{
         }
     }
 
-    accumOtherForces(i){
-      /* gravity + mouse */
-      if(mouseIsPressed){
-        //this.points[i].fx = 0;//(50*m/(abs(-this.points[i].x+mouseX)))*(-this.points[i].x+mouseX);
-        this.points[i].fy += m * g;//+ (50*m/(abs(-this.points[i].y+mouseY)))*(-this.points[i].y+mouseY);
-      }
-      else{
-        //this.points[i].fx += 0;
-        this.points[i].fy += m * g;
+    accumOtherForces(){
+      for(let i = 0; i < this.points.length; ++i)
+      {
+        /* gravity + mouse */
+        if(mouseIsPressed){
+          //this.points[i].fx = 0;//(50*m/(abs(-this.points[i].x+mouseX)))*(-this.points[i].x+mouseX);
+          this.points[i].fy += m * g;//+ (50*m/(abs(-this.points[i].y+mouseY)))*(-this.points[i].y+mouseY);
+        }
+        else{
+          //this.points[i].fx += 0;
+          this.points[i].fy += m * g;
+        }
       }
     }
     
@@ -236,7 +239,7 @@ class SBody{
         {
             if(i===j)
               continue;
-    
+      
             //let otherIndex = this.points[i].connectedPoints[j];
             let other = this.points[j];
             let distance = createVector(
@@ -255,7 +258,7 @@ class SBody{
               //normalize pushvector and move r distance from other node.
               //movingVec points from other to new pos 
               let movingVec = pushingVector.normalize().mult(r);
-    
+      
               //line(other.x, other.y, other.x + movingVec.x, other.y + movingVec.y)
               //move
               deltaX = other.x + movingVec.x - this.points[i].x;
@@ -265,8 +268,8 @@ class SBody{
               let velocity = createVector(this.points[i].vx, this.points[i].vy)
               
               //drawArrow(createVector(other.x + movingVec.x, other.y + movingVec.y), velocity.reflect(pushingVector.normalize()).normalize().mult(20),'blue')
-              this.points[i].vx = 0.9*velocity.reflect(pushingVector.normalize()).x;
-              this.points[i].vy = 0.9*velocity.reflect(pushingVector.normalize()).y;
+              this.points[i].vx = velocity.reflect(pushingVector.normalize()).x;
+              this.points[i].vy = velocity.reflect(pushingVector.normalize()).y;
 
               //break;
             }
@@ -276,29 +279,30 @@ class SBody{
         if(this.points[i].y + deltaY > height)
         {
           deltaY = height - this.points[i].y;
-          this.points[i].vy = -0.8*this.points[i].vy;
+          this.points[i].vy = -this.points[i].vy;
         }
 
         if(this.points[i].y + deltaY < 0)
         {
           deltaY = -this.points[i].y;
-          this.points[i].vy = -0.8*this.points[i].vy;
+          this.points[i].vy = -this.points[i].vy;
         }
 
         if(this.points[i].x + deltaX > windowWidth)
         {
           deltaX = windowWidth - this.points[i].x;
-          this.points[i].vx = -0.8*this.points[i].vx;
+          this.points[i].vx = -this.points[i].vx;
         }
 
         if(this.points[i].x + deltaX < 0)
         {
           deltaX = -this.points[i].x;
-          this.points[i].vx = -0.8*this.points[i].vx;
+          this.points[i].vx = -this.points[i].vx;
         }
-
+        
         return createVector(deltaX, deltaY);
     }
+
 
     interaction(i, deltaX, deltaY){
         let x = this.points[i].x;
@@ -306,73 +310,83 @@ class SBody{
         if(isPicked === null && mouseIsPressed && mouseX < x+r && mouseX>x-r&&mouseY < y+r && mouseY>y-r)
         {
           isPicked = i;
-          return createVector(deltaX, deltaY);
         }else if(isPicked === i && mouseIsPressed && mouseX < x+r && mouseX>x-r&&mouseY < y+r && mouseY>y-r){
           deltaX = mouseX - x;
           deltaY = mouseY - y;
           return createVector(deltaX, deltaY);
         }
-        
+
         return createVector(deltaX, deltaY);
     }
 
     //this is where position and velocity is updated (shouldnt though, each num method should be in own method)
-    euler(i,step){
+    euler(step){
         let deltaY, deltaX; // amount to move, used to check collision with ground and self
       
-        //X
-        this.points[i].vx += (this.points[i].fx / m) * step;
-        deltaX = this.points[i].vx * step;
+        for(let i = 0; i < this.points.length; ++i)
+        {
+          //Get amount to move X
+          this.points[i].vx += (this.points[i].fx / m) * step;
+          deltaX = this.points[i].vx * step;
+          
+          //Get amount to move Y
+          //m försvinner från mg när man delar med m
+          this.points[i].vy += (this.points[i].fy / m) * step; 
+          deltaY = this.points[i].vy * step;
+
+          //Modify delta if point is colliding or interacting
+          let delta = this.interaction(i, deltaX, deltaY);
+          delta = this.collision(i, delta.x, delta.y);
+          
+
+          //update position
+          this.points[i].x += delta.x;
+          this.points[i].y += delta.y;
+        }
+    }
+  
+    improvedEuler(i, step){
         
-        //Y
-        //m försvinner från mg när man delar med m
-        this.points[i].vy += this.points[i].fy * step; 
-        deltaY = this.points[i].vy * step;
+        
 
         return createVector(deltaX, deltaY);
     }
   
-    improvedEuler(i, step){
-        let delta = this.euler(i, step);
-        
-        //X
-        k1 = (this.points[i].fx / m) * step;
-        k2 = this.points[i].vx * step;
-        deltaX = (step/2)*(this.points[i].fx / m + kX); 
-    }
-  
     RK4(i, step){
-  
+        //Accum Force
+        this.accX = (this.points[i].fx / m);
+        this.velX = this.points[i].vx;
+        this.posX = this.points[i].x; 
+        
+        //Calculate velocity and position for each point
+        this.k1velX = this.accelerationX * step;
+        this.k1posX = this.posX + this.k1velX * step;
+
+        //Use values to recalculate force 4 times, save each calculated force
+        this.accumSpringForces()
+        this.accumOtherForces()
+
+        //Take average of the forces and use the avregae to calc next true velocity and position
+
+
+        return createVector(deltaX, deltaY);
     }
 
-    //Have everything done in a single loop
+    //Methods have their own loops through all points
     update(){
         this.reset();
 
         //Start with looping through springs
         this.accumSpringForces();
-        
-        //Loop through all points, pass index to methods
-        for(let i = 0; i < this.points.length; ++i)
-        {
-            
-            //Accum forces like gravity and mouse: loop through points
-            this.accumOtherForces(i);
 
-            //numerical method: loop through points
-            let delta = this.euler(i, 0.03);
+        //Accum forces like gravity and mouse: loop through points
+        //this.accumOtherForces();
 
-            //interaction: loop points
-            delta = this.interaction(i, delta.x, delta.y);
+        //numerical method: loop through points
+        this.euler(0.03);
 
-            //Maybe collision before accumForces for no sticky effect??
-            //collision: loop points twice, returns deltaXY
-            delta = this.collision(i, delta.x, delta.y);
-
-            //update pos:
-            this.points[i].x += delta.x;
-            this.points[i].y += delta.y;
-        }
+        //Maybe collision before accumForces for no sticky effect??
+        //collision: loop points twice, returns deltaXY
     }
 
     reset(){
