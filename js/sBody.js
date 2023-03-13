@@ -144,9 +144,6 @@ class SBody{
               // and set magnitude to force value
               let Fx = ((x1 - x2) / r12d ) * f;
               let Fy = ((y1 - y2) / r12d ) * f;
-              
-
-              
 
               // accumulate force for starting point
               this.points[this.springs[i].i].fx -= Fx;
@@ -307,10 +304,10 @@ class SBody{
     interaction(i, deltaX, deltaY){
         let x = this.points[i].x;
         let y = this.points[i].y;
-        if(isPicked === null && mouseIsPressed && mouseX < x+r && mouseX>x-r&&mouseY < y+r && mouseY>y-r)
+        if(isPicked === null && mouseIsPressed && mouseX < x+r/2 && mouseX>x-r/2&&mouseY < y+r/2 && mouseY>y-r/2)
         {
           isPicked = i;
-        }else if(isPicked === i && mouseIsPressed && mouseX < x+r && mouseX>x-r&&mouseY < y+r && mouseY>y-r){
+        }else if(isPicked === i && mouseIsPressed && mouseX < x+r/2 && mouseX>x-r/2&&mouseY < y+r/2 && mouseY>y-r/2){
           deltaX = mouseX - x;
           deltaY = mouseY - y;
           return createVector(deltaX, deltaY);
@@ -344,14 +341,113 @@ class SBody{
           this.points[i].y += delta.y;
         }
     }
-  
-    improvedEuler(i, step){
-        
-        
+    
+    //not working
+    improvedEuler1(step){
+        //Calculate slope at old time (t) and new time (t + step) and take average
 
-        return createVector(deltaX, deltaY);
+        //vel = vel + 1/2((step*(evaluation at t) + step*(evaluation at t + step))
+
+        let oldPosX = new Array(this.points.length); //old positions at time t
+        let oldVelX = new Array(this.points.length); //old velocities at time t
+        let oldPosY = new Array(this.points.length); //old positions at time t
+        let oldVelY = new Array(this.points.length); //old velocities at time t
+
+        let deltaVX1, deltaVX2;
+        let deltaX1;
+        let deltaVY1, deltaVY2;
+        let deltaY1;
+
+        //Loop through all points and calculate the next step
+        for(let i = 0; i < this.points.length; ++i)
+        {
+          let accX = (this.points[i].fx / m); //current slope
+          let accY = (this.points[i].fy / m);
+
+          //Save old velocity and position
+          oldVelX[i] = this.points[i].vx;
+          oldPosX[i] = this.points[i].x;
+          oldVelY[i] = this.points[i].vy;
+          oldPosY[i] = this.points[i].y;
+
+          //X: Update velocity and position property to new values using euler
+          deltaVX1 = accX * step; // use acceleration to calculate next velocity
+          this.points[i].vx += deltaVX1; // = vx + k1
+
+          deltaX1 = this.points[i].vx * step; //use velocity to calculate next position
+          this.points[i].x += deltaX1; // = x + k1
+
+          //Y: Update velocity and position property to new values using euler
+          deltaVY1 = accY * step; // use acceleration to calculate next velocity
+          this.points[i].vy += deltaVY1;
+
+          deltaY1 = this.points[i].vy * step; //use velocity to calculate next position
+          this.points[i].y += deltaY1; 
+        }
+        
+        //use the new pos and vel to calc new acc f(t + step, x + k1) (new slope)
+        this.resetForces();
+        this.accumSpringForces();
+        this.accumOtherForces();
+
+        //loop through all points again and calculate how much to move from average of k1 & k2
+        for(let i = 0; i < this.points.length; ++i)
+        {
+          let accX = (this.points[i].fx / m); //new slope
+          let accY = (this.points[i].fy / m);
+
+          //Calculate the new delta
+          deltaVX2 = accX * step;
+          deltaVY2 = accY * step;
+
+          //Update velocity with the average of delta1 and delta2
+          this.points[i].vx = oldVelX[i] + 1/2*(deltaVX1 + deltaVX2);
+          this.points[i].vy = oldVelY[i] + 1/2*(deltaVY1 + deltaVY2);
+          
+          deltaX1 = step * this.points[i].vx;
+          deltaY1 = step * this.points[i].vy;
+
+          //Modify delta if point is colliding or interacting
+          let delta = this.interaction(i, deltaX1, deltaY1);
+          delta = this.collision(i, delta.x, delta.y);
+
+          //Update position property with average velocity
+          this.points[i].x = oldPosX[i] + delta.x;
+          this.points[i].y = oldPosY[i] + delta.y;
+        }
     }
-  
+
+    //
+    improvedEuler2(step){
+      for(let i = 0; i < this.points.length; ++i){
+        let x = this.points[i].x;
+        let y = this.points[i].y;
+
+        /* x */
+        let acceleration = this.points[i].fx/m;
+        let velocity = this.points[i].vx;
+        let newVelocity = velocity + acceleration*step;
+        this.points[i].vx = newVelocity; //normal euler
+        let deltaX = step*(velocity + newVelocity)/2; //Average of the old velocity and new velocity. Improved euler
+        
+        /* y */
+        //m försvinner från mg när man delar med m
+        acceleration = this.points[i].fy;
+        velocity = this.points[i].vy;
+        newVelocity = velocity + acceleration*step;
+        this.points[i].vy = newVelocity;
+        let deltaY = step*(velocity + newVelocity)/2; //Average of the old velocity and new velocity
+
+        //Modify delta if point is colliding or interacting
+        let delta = this.interaction(i, deltaX, deltaY);
+        delta = this.collision(i, delta.x, delta.y);
+
+        //update position
+        this.points[i].x += delta.x;
+        this.points[i].y += delta.y;
+      }
+    }
+
     RK4(i, step){
         //Accum Force
         this.accX = (this.points[i].fx / m);
@@ -374,22 +470,21 @@ class SBody{
 
     //Methods have their own loops through all points
     update(){
-        this.reset();
+        this.resetForces();
 
         //Start with looping through springs
         this.accumSpringForces();
 
         //Accum forces like gravity and mouse: loop through points
-        //this.accumOtherForces();
+        this.accumOtherForces();
 
-        //numerical method: loop through points
-        this.euler(0.03);
+        //numerical method + collision + interaction
+        this.improvedEuler2(0.05);
 
         //Maybe collision before accumForces for no sticky effect??
-        //collision: loop points twice, returns deltaXY
     }
 
-    reset(){
+    resetForces(){
       //Resets forces for new accumilation
       for(let i = 0; i < this.points.length; ++i){
         this.points[i].fx = 0;
@@ -437,5 +532,5 @@ class SBody{
           }
           }
         }
-      }
+    }
 }

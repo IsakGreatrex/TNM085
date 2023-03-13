@@ -329,10 +329,10 @@ function mouseReleased(){
 
 const m = 1;
 const g = 100;
-const k = 150;
-const d = 6;
-const dens = 150;
-const r = Math.floor(0.9*dens); //radius for self collision
+const k = 200; //300
+const d = 5; //5
+const dens = 150; 
+const r = Math.floor(0.80*dens); //radius for self collision (80% of dens)
 
 function setup() {
   createCanvas(windowWidth, windowHeight-50);
