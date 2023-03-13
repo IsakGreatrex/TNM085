@@ -1,8 +1,8 @@
-const m = 2;
+const m = 5;
 const g = 9.82;
 const k = 100;
-const d = 2;
-const r = 20; //radius for self collision
+const d = 5;
+const r = 80; //radius for self collision
 
 // draw an arrow for a vector at a given base position
 function drawArrow(base, vec, myColor) {
@@ -19,6 +19,7 @@ function drawArrow(base, vec, myColor) {
   pop();
 }
 
+/*
 class Point{
   constructor(x,y){
     this.x = x;
@@ -168,7 +169,7 @@ class SBody{
   }
   
   accumForces(){
-    /* gravity + mouse */
+    // gravity + mouse 
     
     for(let i=0 ; i < this.points.length; ++i)
     {
@@ -182,7 +183,7 @@ class SBody{
       }
     }
     
-    /* loop over all springs */
+    // loop over all springs, spring force
     for(let i=0 ; i < this.springs.length; ++i)
     {
       // get positions of spring start & end points
@@ -238,11 +239,11 @@ class SBody{
 
     for(i=0 ; i < this.points.length; ++i)
     {
-      /* x */
+      // x 
       this.points[i].vx = this.points[i].vx + (this.points[i].fx / m)*ts;
       deltaX = this.points[i].vx * ts;
       
-      /* y */
+      // y 
       //m försvinner från mg när man delar med m
       this.points[i].vy = this.points[i].vy + this.points[i].fy * ts; 
       deltaY = this.points[i].vy * ts;
@@ -294,10 +295,10 @@ class SBody{
           let velocity = createVector(this.points[i].vx, this.points[i].vy)
           
           //drawArrow(createVector(other.x + movingVec.x, other.y + movingVec.y), velocity.reflect(pushingVector.normalize()).normalize().mult(20),'blue')
-          this.points[i].vx = 0.5*velocity.reflect(pushingVector.normalize()).x;
-          this.points[i].vy = 0.5*velocity.reflect(pushingVector.normalize()).y;
+          this.points[i].vx = velocity.reflect(pushingVector.normalize()).x;
+          this.points[i].vy = velocity.reflect(pushingVector.normalize()).y;
           
-          
+          //rita upp reflect vector för att se att det faktiskt fungerar?
           //break;
         }
       }
@@ -316,13 +317,12 @@ class SBody{
       
     }
 
-/*     this.points[0].x = mouseX;
-    this.points[0].y = mouseY; */
+    //this.points[0].x = mouseX;
+    //this.points[0].y = mouseY;
   }
 }
-
+*/
 let body;
-let mySound;
 
 let nodesInput, springsInput, sizeInput, updateButton;
 
@@ -330,8 +330,6 @@ let isPicked = null;
 function mouseReleased(){
   isPicked = null;
 }
-
-
 
 function setup() {
   createCanvas(windowWidth, windowHeight-50);
@@ -341,7 +339,7 @@ function setup() {
 
   //Create shape
   topLeft = createVector(windowWidth/3, -100);
-  body.createBox(topLeft, 60, 5);
+  body.createBox(topLeft, 100, 5);
   console.log(body);
   gui();
 }
@@ -349,11 +347,11 @@ function setup() {
 function draw() {
   background(220);
 
-  //Calculate all forces
-  body.accumForces();
+  //body.update()
+  //gui.update()
 
-  //Så jävla trash för ts>0.5, instabil af
-  body.euler(0.03);
+  //Calculate all forces
+  body.update();
   
   //Argument: nodes, springs, arrows, collision, storlek på nodes.
   body.show(parseInt(nodesInput.value()), parseInt(springsInput.value()), parseInt(arrowInput.value()), parseInt(colInput.value()), parseInt(sizeInput.value()));
