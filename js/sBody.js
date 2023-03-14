@@ -171,63 +171,6 @@ class SBody{
       }
     }
     
-    //old
-    accumForces(){
-      // gravity + mouse 
-      
-      for(let i=0 ; i < this.points.length; ++i)
-      {
-        if(mouseIsPressed){
-          this.points[i].fx = 0;//(50*m/(abs(-this.points[i].x+mouseX)))*(-this.points[i].x+mouseX);
-          this.points[i].fy = m * g;//+ (50*m/(abs(-this.points[i].y+mouseY)))*(-this.points[i].y+mouseY);
-        }
-        else{
-          this.points[i].fx = 0;
-          this.points[i].fy = m * g;
-        }
-      }
-      
-      // loop over all springs, spring force
-      for(let i=0 ; i < this.springs.length; ++i)
-      {
-        // get positions of spring start & end points
-        let x1 = this.points[this.springs[i].i].x;
-        let y1 = this.points[this.springs[i].i].y;
-        let x2 = this.points[this.springs[i].j].x;
-        let y2 = this.points[this.springs[i].j].y;
-        
-        // calculate norm (distance)
-        let r12d = sqrt (
-        (x1 - x2)*(x1 - x2) +
-        (y1 - y2)*(y1 - y2) 
-        );
-        
-        if(r12d !== 0) // start = end?
-        {
-          // get velocities of start (& end points)
-          let vx12 = this.points[this.springs[i].i].vx - this.points[this.springs[i].j].vx;
-          let vy12 = this.points[this.springs[i].i].vy - this.points[this.springs[i].j].vy;
-          
-          // calculate force value 
-          let f = (r12d - this.springs[i].l) * k +
-          (vx12 * (x1 - x2) + vy12 * (y1 - y2)) * d / r12d; //Direct scalar product
-          
-          // force vector, calculate normalized vector that is parallell with the spring
-          // and set magnitude to force value
-          let Fx = ((x1 - x2) / r12d ) * f;
-          let Fy = ((y1 - y2) / r12d ) * f;
-          
-          // accumulate force for starting point
-          this.points[this.springs[i].i].fx -= Fx;
-          this.points[this.springs[i].i].fy -= Fy;
-          
-          // accumulate force for end point
-          this.points[this.springs[i].j].fx += Fx;
-          this.points[this.springs[i].j].fy += Fy;
-        }  
-      }
-    }
-
     collision(i, deltaX, deltaY){
         //SELF COLLISION (kinda working, sticky):
         //Check if the current node is colliding with any other node
@@ -479,7 +422,7 @@ class SBody{
         this.accumOtherForces();
 
         //numerical method + collision + interaction
-        this.improvedEuler2(0.05);
+        this.euler(0.03);
 
         //Maybe collision before accumForces for no sticky effect??
     }
